@@ -32,12 +32,12 @@ class ValidationAgent:
         
         # 注册验证函数供智能体使用
         self.register_functions()
-        logger.info("验证智能体已初始化")
+        logger.info("Validation agent initialized")
 
     def register_functions(self):
         """注册智能体可以调用的函数。"""
         
-        @self.agent.register_for_llm(description="运行Semgrep在测试代码上验证规则")
+        @self.agent.register_for_llm(description="Run Semgrep on test code to validate rules")
         def validate_rule_with_semgrep(rule_yaml: str, test_code: str, test_type: str = "positive") -> str:
             """
             使用Semgrep CLI执行规则验证。
@@ -54,38 +54,38 @@ class ValidationAgent:
                 result = self.semgrep_runner.run_semgrep(rule_yaml, test_code)
                 
                 if not result["success"]:
-                    return f"执行Semgrep时出错 ({test_type} 测试): {result.get('error', '未知错误')}"
+                    return f"Error executing Semgrep ({test_type} test): {result.get('error', 'Unknown error')}"
                 
                 if test_type == "positive":
-                    expected = "检测到漏洞"
+                    expected = "vulnerability detected"
                     success = len(result["results"]) > 0
                 else:  # negative
-                    expected = "不检测到漏洞"
+                    expected = "vulnerability not detected" 
                     success = len(result["results"]) == 0
                 
-                status = "成功" if success else "失败"
+                status = "Success" if success else "Failed"
                 
                 response = f"""
-                ### {test_type.capitalize()} 测试:
-                - **结果:** {status} - 规则 {'' if success else '不'}{expected}
-                - **触发次数:** {len(result['results'])}
-                - **错误:** {len(result.get('errors', []))}
+                ### {test_type.capitalize()} Test:
+                - **Result:** {status} - Rule {'' if success else 'does not '}{expected}
+                - **Trigger Count:** {len(result['results'])}
+                - **Errors:** {len(result.get('errors', []))}
                 """
                 
                 if result["results"]:
-                    response += "\n- **检测到的触发:**"
+                    response += "\n- **Detected Triggers:**"
                     for i, match in enumerate(result["results"][:3]):  # 显示前3个
-                        response += f"\n  {i+1}. {match.get('message', '无消息')}"
+                        response += f"\n  {i+1}. {match.get('message', 'No message')}"
                 
                 if result.get("errors"):
-                    response += "\n- **Semgrep错误:**"
+                    response += "\n- **Semgrep Errors:**"
                     for error in result.get("errors", [])[:3]:  # 显示前3个错误
-                        response += f"\n  - {error.get('message', '未知错误')}"
+                        response += f"\n  - {error.get('message', 'Unknown error')}"
                 
                 return response
                 
             except Exception as e:
-                error_msg = f"验证规则时发生意外错误: {str(e)}"
+                error_msg = f"Unexpected error during rule validation: {str(e)}"
                 logger.error(error_msg)
                 return error_msg
 
@@ -116,24 +116,24 @@ class ValidationAgent:
             user_proxy.initiate_chat(
                 self.agent,
                 message=f"""
-                请测试以下Semgrep规则并提供详细报告:
+                Please test the following Semgrep rule and provide a detailed report:
                 
-                ## 规则 (ID: {rule_id}):
+                ## Rule (ID: {rule_id}):
                 ```yaml
                 {rule_yaml}
                 ```
                 
-                ## 正向测试（包含漏洞的代码）:
+                ## Positive Test (code with vulnerability):
                 ```python
                 {positive_test}
                 ```
                 
-                ## 负向测试（不含漏洞的代码）:
+                ## Negative Test (code without vulnerability):
                 ```python
                 {negative_test}
                 ```
                 
-                请在两个示例上测试规则并提供结论。
+                Please test the rule on both examples and provide conclusions.
                 """,
             )
             
@@ -156,12 +156,12 @@ class ValidationAgent:
             else:
                 return {
                     "success": False,
-                    "error": "智能体未返回响应",
+                    "error": "Agent did not return response",
                     "validation_passed": False
                 }
                 
         except Exception as e:
-            error_msg = f"验证规则时出错: {str(e)}"
+            error_msg = f"Error during rule validation: {str(e)}"
             logger.error(error_msg)
             return {
                 "success": False,

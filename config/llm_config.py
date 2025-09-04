@@ -19,6 +19,6 @@ LLM_CONFIG = {
 RULE_ENGINEER_LLM_CONFIG = {
     "config_list": LLM_CONFIG["config_list"],
     "temperature": 0.3,  # 更高的温度用于创造性
-    "timeout": 180,  # 更多时间用于生成复杂规则
+    "timeout": 180,      # 更多时间用于生成复杂规则
     "cache_seed": 42
 }

@@ -32,30 +32,30 @@ class SearchAgent:
         
         # 注册搜索函数供智能体使用
         self.register_functions()
-        logger.info("搜索智能体已初始化")
+        logger.info("Search agent initialized")
 
     def register_functions(self):
         """注册智能体可以调用的函数。"""
         
-        @self.agent.register_for_llm(description="根据文本查询在数据库中搜索相关规则")
+        @self.agent.register_for_llm(description="Search for relevant rules in database based on text query")
         def query_rules(query_text: str, n_results: int = 5) -> str:
             """
-            Выполняет поиск правил по текстовому запросу.
+            根据文本查询在数据库中搜索相关规则。
             
             Args:
-                query_text: Текст запроса для поиска
-                n_results: Количество возвращаемых результатов
+                query_text: 用于搜索的查询文本
+                n_results: 返回结果的数量
                 
             Returns:
-                Строка с результатами поиска
+                包含搜索结果的字符串
             """
             try:
                 results = self.vector_db_manager.query_rules(query_text, n_results)
                 
                 if not results:
-                    return "По вашему запросу не найдено ни одного правила."
+                    return "No rules found based on your query."
                 
-                # Форматируем результаты в читаемый вид
+                # 将结果格式化为可读形式
                 formatted_results = []
                 for i, result in enumerate(results):
                     formatted_results.append(
@@ -66,25 +66,25 @@ class SearchAgent:
                         f"   Similarity: {result['distance']:.4f}\n"
                     )
                 
-                return "Найдены следующие релевантные правила:\n\n" + "\n".join(formatted_results)
+                return "Found the following relevant rules:\n\n" + "\n".join(formatted_results)
                 
             except Exception as e:
-                error_msg = f"Ошибка при выполнении поиска: {str(e)}"
+                error_msg = f"Error during search execution: {str(e)}"
                 logger.error(error_msg)
                 return error_msg
 
     def formulate_search_query(self, problem_description: str) -> str:
         """
-        Формулирует поисковый запрос на основе описания проблемы.
+        根据问题描述制定搜索查询。
         
         Args:
-            problem_description: Описание уязвимости или проблемы
+            problem_description: 漏洞或问题的描述
             
         Returns:
-            Сформулированный поисковый запрос
+            制定的搜索查询
         """
         try:
-            # Создаем UserProxyAgent для взаимодействия с Search Agent
+            # 创建UserProxyAgent与Search Agent交互
             user_proxy = autogen.UserProxyAgent(
                 name="User_Proxy",
                 human_input_mode="NEVER",
@@ -92,53 +92,53 @@ class SearchAgent:
                 max_consecutive_auto_reply=1,
             )
             
-            # Запускаем диалог для формулирования поискового запроса
+            # 启动对话以制定搜索查询
             user_proxy.initiate_chat(
                 self.agent,
                 message=f"""
-                Проанализируй следующее описание уязвимости и сформулируй точный поисковый запрос для базы правил:
+                Analyze the following vulnerability description and formulate a precise search query for the rule database:
                 
                 {problem_description}
                 
-                Верни только поисковый запрос без дополнительных комментариев.
+                Return only the search query, no additional comments.
                 """,
             )
             
-            # Получаем последний ответ агента
+            # 获取智能体的最后回复
             last_message = self.agent.last_message()
             if last_message and "content" in last_message:
                 return last_message["content"].strip()
             else:
-                logger.warning("Агент не вернул поисковый запрос")
-                return problem_description  # Fallback - используем исходное описание
+                logger.warning("Agent did not return search query")
+                return problem_description  # 备用方案 - 使用原始描述
                 
         except Exception as e:
-            logger.error(f"Ошибка при формулировании поискового запроса: {str(e)}")
-            return problem_description  # Fallback - используем исходное описание
+            logger.error(f"Error during search query formulation: {str(e)}")
+            return problem_description  # 备用方案 - 使用原始描述
 
     def find_relevant_rules(self, problem_description: str, n_results: int = 5) -> str:
         """
-        Основной метод для поиска релевантных правил.
+        搜索相关规则的主要方法。
         
         Args:
-            problem_description: Описание уязвимости или проблемы
-            n_results: Количество возвращаемых результатов
+            problem_description: 漏洞或问题的描述
+            n_results: 返回结果的数量
             
         Returns:
-            Строка с результатами поиска
+            包含搜索结果的字符串
         """
-        # Сначала формулируем оптимальный поисковый запрос
+        # 首先制定最优的搜索查询
         search_query = self.formulate_search_query(problem_description)
-        logger.info(f"Сформулирован поисковый запрос: '{search_query}'")
+        logger.info(f"Search query formulated: '{search_query}'")
         
-        # Затем выполняем поиск по векторной БД
+        # 然后在向量数据库中执行搜索
         try:
             results = self.vector_db_manager.query_rules(search_query, n_results)
             
             if not results:
-                return "По вашему запросу не найдено ни одного правила."
+                return "No rules found based on your query."
             
-            # Форматируем результаты в читаемый вид
+            # 将结果格式化为可读形式
             formatted_results = []
             for i, result in enumerate(results):
                 formatted_results.append(
@@ -149,9 +149,9 @@ class SearchAgent:
                     f"   Similarity: {result['distance']:.4f}\n"
                 )
             
-            return "Найдены следующие релевантные правила:\n\n" + "\n".join(formatted_results)
+            return "Found the following relevant rules:\n\n" + "\n".join(formatted_results)
             
         except Exception as e:
-            error_msg = f"Ошибка при выполнении поиска: {str(e)}"
+            error_msg = f"Error during search execution: {str(e)}"
             logger.error(error_msg)
             return error_msg

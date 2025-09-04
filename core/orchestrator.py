@@ -39,7 +39,7 @@ class Orchestrator:
             max_consecutive_auto_reply=10,
         )
         
-        logger.info("协调器已初始化所有智能体")
+        logger.info("Orchestrator initialized all agents")
 
     def create_positive_test_case(self, code_snippet: str, vulnerability_description: str) -> str:
         """
@@ -87,15 +87,15 @@ class Orchestrator:
         Returns:
             包含工作流程结果的字典
         """
-        logger.info(f"启动完整工作流程: {vulnerability_description}")
+        logger.info(f"Starting full workflow: {vulnerability_description}")
         
         # 步骤1: 搜索现有规则
-        logger.info("步骤1: 搜索现有规则...")
+        logger.info("Step 1: Searching existing rules...")
         search_result = self.search_agent.find_relevant_rules(vulnerability_description)
         
         # 提取找到的规则信息
         similar_rules = []
-        if "找到以下相关规则" in search_result:
+        if "Found the following relevant rules" in search_result:
             # 解析搜索结果以传递给工程师智能体
             lines = search_result.split("\n")
             for line in lines:
@@ -104,7 +104,7 @@ class Orchestrator:
                     similar_rules.append({"id": rule_id})
         
         # 步骤2: 创建或更新规则
-        logger.info("步骤2: 创建/更新规则...")
+        logger.info("Step 2: Creating/updating rules...")
         rule_result = self.rule_engineer_agent.create_or_update_rule(
             problem_description=vulnerability_description,
             code_example=code_snippet,
@@ -119,12 +119,12 @@ class Orchestrator:
             }
         
         # 步骤3: 准备测试用例
-        logger.info("步骤3: 准备测试用例...")
+        logger.info("Step 3: Preparing test cases...")
         positive_test = self.create_positive_test_case(code_snippet, vulnerability_description)
         negative_test = self.create_negative_test_case(code_snippet, vulnerability_description)
         
         # 步骤4: 验证规则
-        logger.info("步骤4: 验证规则...")
+        logger.info("Step 4: Validating rules...")
         validation_result = self.validation_agent.validate_rule(
             rule_yaml=rule_result["rule_yaml"],
             positive_test=positive_test,
@@ -135,13 +135,13 @@ class Orchestrator:
         if not validation_result["success"]:
             return {
                 "success": False,
-                "error": validation_result.get("error", "验证错误"),
+                "error": validation_result.get("error", "Validation error"),
                 "step": "validation",
                 "rule_yaml": rule_result["rule_yaml"]  # 仍然返回规则
             }
         
         # 步骤5: 保存成功的规则
-        logger.info("步骤5: 保存规则...")
+        logger.info("Step 5: Saving rules...")
         if validation_result.get("validation_passed", False):
             # 从YAML中提取规则ID作为文件名
             try:
@@ -170,7 +170,7 @@ class Orchestrator:
             "is_new_rule": rule_result.get("is_new", True)
         }
         
-        logger.info("工作流程成功完成!")
+        logger.info("Workflow completed successfully!")
         return result
 
     def run_interactive_workflow(self):
@@ -239,6 +239,7 @@ def main():
     """启动协调器的主函数。"""
     orchestrator = Orchestrator()
     orchestrator.run_interactive_workflow()
+
 
 if __name__ == "__main__":
     main()
