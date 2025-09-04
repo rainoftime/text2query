@@ -1,6 +1,19 @@
 
 # 一些思考
 
+
+- semgrep规则来源
+- Positive / Negative Example 的来源
+- 检索优化
+
+## Semgrep规则来源
+
+- semgrep官方规则库：本项目默认使用的（带下载脚本）
+- https://github.com/trailofbits/semgrep-rules
+- ...
+
+其他可能性：可以用CodeQL、Clang tidy等分析器的规则自动”翻译“吗？
+
 ## Positive / Negative Example 的来源
 
 ### 1. 来自官方规则库的测试集
